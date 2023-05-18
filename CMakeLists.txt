@@ -73,6 +73,28 @@ if(SIMPLE_WITH_JIEBA)
   add_definitions(-DUSE_JIEBA=1)
 endif()
 
+option(SIMPLE_WITH_JIEBA_DICT "Option to include jieba dict" OFF)
+if(SIMPLE_WITH_JIEBA_DICT)
+  cmrc_add_resource_library(JIEBA_DICT TYPE OBJECT NAMESPACE jieba_dict contrib/dict/hmm_model.utf8 
+                                                                      contrib/dict/idf.utf8 
+                                                                      contrib/dict/jieba.dict.utf8 
+                                                                      contrib/dict/stop_words.utf8 
+                                                                      contrib/dict/user.dict.utf8 
+                                                                      contrib/dict/stop_words.utf8 
+                                                                      contrib/dict/pos_dict/char_state_tab.utf8
+                                                                      contrib/dict/pos_dict/prob_emit.utf8
+                                                                      contrib/dict/pos_dict/prob_start.utf8
+                                                                      contrib/dict/pos_dict/prob_trans.utf8
+  )
+  # https://github.com/vector-of-bool/cmrc/issues/17#issuecomment-659501280
+  set_property(TARGET JIEBA_DICT PROPERTY POSITION_INDEPENDENT_CODE ON)
+endif()
+
+OPTION(SIMPLE_BUILT_IN "Option to build as built-in extension" OFF)
+if(SIMPLE_BUILT_IN)
+  add_definitions(-DSQLITE_CORE)
+endif()
+
 add_subdirectory(src)
 
 OPTION(BUILD_TEST_EXAMPLE "Option to build tests and examples" ON)

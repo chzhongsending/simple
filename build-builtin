@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+current_dir=$(pwd)/$(dirname "$0")
+build_dir="${current_dir}/builtin-build"
+lib_prefix="${current_dir}/builtin-output"
+
+mkdir -p "$build_dir"
+
+cd "$build_dir" || exit
+
+cmake -DCODE_COVERAGE=OFF \
+      -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+      -DBUILD_STATIC=ON \
+      -DSIMPLE_WITH_JIEBA=OFF \
+      -DSIMPLE_BUILT_IN=ON \
+      -DBUILD_SQLITE3=OFF \
+      -DBUILD_TEST_EXAMPLE=OFF \
+      -DCMAKE_INSTALL_PREFIX=${lib_prefix} \
+      ..
+
+make -j 4
+make install

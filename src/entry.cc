@@ -1,6 +1,32 @@
 #include "simple_highlight.h"
 #include "simple_tokenizer.h"
-SQLITE_EXTENSION_INIT1
+
+#ifndef SQLITE_CORE
+  #include "sqlite3ext.h"
+  SQLITE_EXTENSION_INIT1
+#else
+  #include "sqlite3.h"
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif  /* __cplusplus */
+
+int fts5_simple_xCreate(void *sqlite3, const char **azArg, int nArg, Fts5Tokenizer **ppOut);
+int fts5_simple_xTokenize(Fts5Tokenizer *tokenizer_ptr, void *pCtx, int flags, const char *pText, int nText,
+                                     xTokenFn xToken);
+void fts5_simple_xDelete(Fts5Tokenizer *tokenizer_ptr);
+
+
+int sqlite3SimpleInit(sqlite3 *db);
+
+
+int sqlite3_simple_init(sqlite3 *db, char **pzErrMsg, const sqlite3_api_routines *pApi);
+
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif  /* __cplusplus */
+
 
 #include <cstring>
 #include <new>
@@ -97,11 +123,8 @@ static void simple_query(sqlite3_context *pCtx, int nVal, sqlite3_value **apVal)
   sqlite3_result_null(pCtx);
 }
 
-int sqlite3_simple_init(sqlite3 *db, char **pzErrMsg, const sqlite3_api_routines *pApi) {
-  (void)pzErrMsg;
+int sqlite3SimpleInit(sqlite3 *db) {
   int rc = SQLITE_OK;
-  SQLITE_EXTENSION_INIT2(pApi)
-
   rc = sqlite3_create_function(db, "simple_query", -1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &simple_query, NULL,
                                NULL);
 #ifdef USE_JIEBA
@@ -124,5 +147,13 @@ int sqlite3_simple_init(sqlite3 *db, char **pzErrMsg, const sqlite3_api_routines
   rc = fts5api->xCreateFunction(fts5api, "simple_highlight_pos", reinterpret_cast<void *>(fts5api),
                                 &simple_highlight_pos, NULL);
   rc = fts5api->xCreateFunction(fts5api, "simple_snippet", reinterpret_cast<void *>(fts5api), &simple_snippet, NULL);
-  return rc;
+  return rc;  
 }
+
+#ifndef SQLITE_CORE
+int sqlite3_simple_init(sqlite3 *db, char **pzErrMsg, const sqlite3_api_routines *pApi) {
+  (void)pzErrMsg;
+  SQLITE_EXTENSION_INIT2(pApi)
+  return sqlite3SimpleInit(db);
+}
+#endif

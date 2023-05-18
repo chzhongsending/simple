@@ -9,6 +9,10 @@ build-ios/
 bin/
 output/
 output-no-jieba/
+*-output/
+output-*/
+build-*/
+*-build/
 chat.db
 examples/node/node_modules/
 examples/node/lib/
