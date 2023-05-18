@@ -73,10 +73,44 @@ make -j 12
 make install
 ```
 
-支持 iOS 编译：
+#### iOS 编译
 ```
 ./build-ios.sh
 ```
+
+#### 编译为 SQLite 内置 extension
+```
+./build-builtin
+```
+或者指定 `SIMPLE_BUILT_IN=ON`：
+```
+cmake -DSIMPLE_BUILT_IN=ON ..
+```
+用脚本编译时不会附带more不会集成jieba分词。
+
+#### 编译为 WASM 支持的静态库
+1. 参考[这里](https://www.sqlite.org/src/dir?name=ext/wasm) 配置好 Emscripten SDK.
+2. 用 emsdk 的包装工具配置和编译：
+```
+mkdir wasm-build; cd wasm-build
+# 由于 wasm 只能使用 OPFS 文件系统，无法提供结巴词典，所以无法和结巴一起编译；
+# 同时由于是要和 SQLite 代码一起打包，所以输出静态库
+emcmake cmake -DSIMPLE_BUILT_IN=ON -DBUILD_STATIC=ON -DBUILD_TEST_EXAMPLE=OFF -DBUILD_WITH_JIEBA=OFF ..
+emmake make
+```
+或者直接使用脚本编译：
+```
+./build-wasm
+```
+
+#### 集成于 SQLite（含 sqlite-wasm）
+由于本人没看懂原作者的编译逻辑，所以只能将 simple 先编译为静态库，再集成到 SQLite。如果有高手可以直接把代码集成到 SQLite 中一起编译那是最好的。 
+
+过程比较复杂，这里只给出要做的事情：
+1. 修改 `configure.ac`、`Makefile.in`、`main.mk`等文件，确保编译系统能指定正确的参数链接 `libsimple.a`。注意要添加 `-lstdc++`。
+2. 修改 `main.c`，确保把 `sqlite3SimpleInit` 加入到内置 extension 列表中以正确初始化（需要放在 FTS extension 后面）；\、
+修改 `mksqlite3c.tcl`，确保编译系统生成整合版 `sqlite3.c` 时不要把 `sqlite3SimpleInit` 标记为 `SQLITE_PRIVATE`。
+3. （Wasm）修改 `ext\wasm\GNUMakefile`、`ext\wasm\fiddle.mk`，添加合适的参数指定链接 `libsimple.a`。
 
 ### 代码
 - `src/entry` 入口文件，注册 sqlite tokenizer 和函数
