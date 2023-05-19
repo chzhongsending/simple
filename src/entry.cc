@@ -1,12 +1,11 @@
 #include "simple_highlight.h"
 #include "simple_tokenizer.h"
 
-#ifndef SQLITE_CORE
-  #include "sqlite3ext.h"
-  SQLITE_EXTENSION_INIT1
-#else
-  #include "sqlite3.h"
-#endif
+#include "simple.h"
+
+#include "sqlite3ext.h"
+SQLITE_EXTENSION_INIT1
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,11 +16,6 @@ int fts5_simple_xTokenize(Fts5Tokenizer *tokenizer_ptr, void *pCtx, int flags, c
                                      xTokenFn xToken);
 void fts5_simple_xDelete(Fts5Tokenizer *tokenizer_ptr);
 
-
-int sqlite3SimpleInit(sqlite3 *db);
-
-
-int sqlite3_simple_init(sqlite3 *db, char **pzErrMsg, const sqlite3_api_routines *pApi);
 
 #ifdef __cplusplus
 }  /* extern "C" */
@@ -123,6 +117,13 @@ static void simple_query(sqlite3_context *pCtx, int nVal, sqlite3_value **apVal)
   sqlite3_result_null(pCtx);
 }
 
+/*
+ Real extension initializer 
+
+ When building as built-in extension, we don't need `sqlite3_api_routines` to work, because sqlite3 apis will be statically linked.
+ When building as an external extension, sqlite APIs are redefined to `sqlite_api->method` in sqlite3ext.h, which should be passed through
+ `sqlite3_simple_init`. So this method is only exported when building as built-in library.
+*/
 int sqlite3SimpleInit(sqlite3 *db) {
   int rc = SQLITE_OK;
   rc = sqlite3_create_function(db, "simple_query", -1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, NULL, &simple_query, NULL,
@@ -150,7 +151,8 @@ int sqlite3SimpleInit(sqlite3 *db) {
   return rc;  
 }
 
-#ifndef SQLITE_CORE
+// Only implement loader function when use as a external extension.
+#if !defined(SQLITE_CORE)
 int sqlite3_simple_init(sqlite3 *db, char **pzErrMsg, const sqlite3_api_routines *pApi) {
   (void)pzErrMsg;
   SQLITE_EXTENSION_INIT2(pApi)

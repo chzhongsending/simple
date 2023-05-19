@@ -26,10 +26,15 @@ set(SOURCE_FILES
     entry.cc
 )
 
+set(PUBLIC_HEADER
+    simple.h
+)
+
 OPTION(BUILD_STATIC "Option to build static lib" OFF)
 if (IOS OR BUILD_STATIC)
 # iOS only support static library.
 add_library(simple STATIC ${SOURCE_FILES})
+install(FILES ${PUBLIC_HEADER} DESTINATION include)
 else()
 add_library(simple SHARED ${SOURCE_FILES})
 endif()
